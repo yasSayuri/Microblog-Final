@@ -1,0 +1,16 @@
+{
+  "name": "microblog",
+  "version": "1.0.0",
+  "description": "Projeto 2 da disciplina Programação Web Back-End",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "express": "^5.1.0",
+    "express-session": "^1.18.1",
+    "mongodb": "^6.17.0"
+  }
+}

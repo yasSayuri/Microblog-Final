@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastro - Microblog</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Cadastro de Usuário</h1>
+  <form id="formCadastro">
+    <input type="text" name="nome" placeholder="Nome" required />
+    <input type="email" name="email" placeholder="Email" required />
+    <input type="password" name="senha" placeholder="Senha" required />
+    <button type="submit">Criar Usuário</button>
+  </form>
+  <p>Já tem conta? <a href="/login.html">Faça login aqui</a></p>
+
+  <script>
+    const form = document.getElementById('formCadastro');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault(); // evita envio padrão do form
+
+      const nome = form.nome.value;
+      const email = form.email.value;
+      const senha = form.senha.value;
+
+      try {
+        const res = await fetch('/usuarios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, email, senha })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          alert(data.msg); // mensagem de sucesso
+          window.location.href = '/login.html'; // redireciona para login
+        } else {
+          alert('Erro: ' + (data.error || 'Algo deu errado'));
+        }
+      } catch (err) {
+        alert('Erro na comunicação com o servidor');
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>
