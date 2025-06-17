@@ -142,13 +142,43 @@ app.get('/posts/meus', async (req, res) => {
 // Listar todos os posts (feed)
 app.get('/posts', async (req, res) => {
   try {
-    const posts = await db.collection('posts').find().sort({ data: -1 }).toArray();
-    res.json(posts);
+    const posts = await db.collection('posts').aggregate([
+      {
+        $lookup: {
+          from: 'usuarios',
+          localField: 'autorId',
+          foreignField: '_id',
+          as: 'autor'
+        }
+      },
+      { $unwind: '$autor' },
+      { $sort: { data: -1 } },
+      {
+        $project: {
+          conteudo: 1,
+          data: 1,
+          autorId: 1,
+          'autor.nome': 1,
+          'autor._id': 1
+        }
+      }
+    ]).toArray();
+
+    const postsFormatados = posts.map(post => ({
+      _id: post._id,
+      conteudo: post.conteudo,
+      data: post.data,
+      autorId: post.autor._id,
+      autorNome: post.autor.nome
+    }));
+
+    res.json(postsFormatados);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erro interno' });
   }
 });
+
 
 // Listar usuários (sem senha)
 app.get('/usuarios', async (req, res) => {

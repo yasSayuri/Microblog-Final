@@ -102,3 +102,20 @@ button {
 button:hover {
   background-color: #219150;
 }
+
+.post {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+  position: relative;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.post .acoes {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+}

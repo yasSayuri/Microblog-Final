@@ -10,19 +10,27 @@
       padding: 10px;
       margin-bottom: 10px;
       position: relative;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
+
     .post .acoes {
       position: absolute;
-      top: 10px;
+      bottom: 10px;
       right: 10px;
     }
+
     .post .acoes button {
-      background: none;
+      background: yellow;
+      color: black;
       border: none;
       cursor: pointer;
       margin-left: 5px;
       font-size: 16px;
     }
+
     textarea.editavel {
       width: 100%;
       height: 80px;
@@ -46,167 +54,156 @@
   </section>
 
   <script>
-    const form = document.getElementById('formPostagem');
-    const listaPosts = document.getElementById('listaPosts');
+  const form = document.getElementById('formPostagem');
+  const listaPosts = document.getElementById('listaPosts');
 
-    // Pega dados do usuário logado
-    const usuarioLogadoId = sessionStorage.getItem('usuarioId');
-    const usuarioLogadoNome = sessionStorage.getItem('usuarioNome');
+  const usuarioLogadoId = sessionStorage.getItem('usuarioId');
+  const usuarioLogadoNome = sessionStorage.getItem('usuarioNome');
 
-    // Criar post
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const conteudo = form.conteudo.value.trim();
+    if (!conteudo) return;
 
-      const conteudo = form.conteudo.value.trim();
-      if (!conteudo) return;
+    try {
+      const res = await fetch('/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conteudo })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(data.mensagem || 'Post criado com sucesso');
+        form.reset();
+        carregarPosts();
+      } else {
+        alert('Erro: ' + (data.mensagem || 'Não foi possível criar a postagem'));
+      }
+    } catch (err) {
+      alert('Erro ao comunicar com o servidor');
+      console.error(err);
+    }
+  });
+
+  async function carregarPosts() {
+    try {
+      const res = await fetch('/posts');
+      const posts = await res.json();
+
+      listaPosts.innerHTML = '';
+
+      posts.forEach(post => {
+        const divPost = document.createElement('div');
+        divPost.className = 'post';
+
+        const nomeAutor = post.autorNome || 'Anônimo';
+        const dataFormatada = new Date(post.data).toLocaleString();
+
+        const header = document.createElement('div');
+        header.innerHTML = `
+          <strong>${nomeAutor}</strong><br>
+          <small>${dataFormatada}</small><br>
+        `;
+
+        const conteudoPost = document.createElement('p');
+        conteudoPost.textContent = post.conteudo;
+
+        const divAcoes = document.createElement('div');
+        divAcoes.className = 'acoes';
+
+        if (post.autor && post.autor._id === usuarioLogadoId) {
+          const btnEditar = document.createElement('button');
+          btnEditar.title = 'Editar post';
+          btnEditar.innerHTML = '✏️';
+          btnEditar.addEventListener('click', () => iniciarEdicao(post, divPost));
+          divAcoes.appendChild(btnEditar);
+
+          const btnExcluir = document.createElement('button');
+          btnExcluir.title = 'Excluir post';
+          btnExcluir.innerHTML = '🗑️';
+          btnExcluir.addEventListener('click', () => excluirPost(post._id));
+          divAcoes.appendChild(btnExcluir);
+        }
+
+        divPost.appendChild(header);
+        divPost.appendChild(conteudoPost);
+        divPost.appendChild(divAcoes);
+
+        listaPosts.appendChild(divPost);
+      });
+    } catch (err) {
+      console.error('Erro ao carregar posts', err);
+    }
+  }
+
+  async function excluirPost(postId) {
+    if (!confirm('Tem certeza que deseja excluir este post?')) return;
+
+    try {
+      const res = await fetch('/posts/' + postId, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(data.mensagem || 'Post excluído com sucesso');
+        carregarPosts();
+      } else {
+        alert('Erro: ' + (data.mensagem || 'Não foi possível excluir o post'));
+      }
+    } catch (err) {
+      alert('Erro ao comunicar com o servidor');
+      console.error(err);
+    }
+  }
+
+  function iniciarEdicao(post, divPost) {
+    divPost.innerHTML = `
+      <strong>${post.autor.nome}</strong><br>
+      <small>${new Date(post.data).toLocaleString()}</small><br>
+      <textarea class="editavel">${post.conteudo}</textarea><br>
+      <button id="salvarBtn">Salvar</button>
+      <button id="cancelarBtn">Cancelar</button>
+    `;
+
+    const textarea = divPost.querySelector('textarea');
+    const btnSalvar = divPost.querySelector('#salvarBtn');
+    const btnCancelar = divPost.querySelector('#cancelarBtn');
+
+    btnCancelar.addEventListener('click', carregarPosts);
+
+    btnSalvar.addEventListener('click', async () => {
+      const novoConteudo = textarea.value.trim();
+      if (!novoConteudo) {
+        alert('Conteúdo não pode ser vazio');
+        return;
+      }
 
       try {
-        const res = await fetch('/posts', {
-          method: 'POST',
+        const res = await fetch('/posts/' + post._id, {
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ conteudo })
+          body: JSON.stringify({ conteudo: novoConteudo })
         });
 
         const data = await res.json();
 
         if (res.ok) {
-          alert(data.mensagem || 'Post criado com sucesso');
-          form.reset();
+          alert(data.mensagem || 'Post atualizado com sucesso');
           carregarPosts();
         } else {
-          alert('Erro: ' + (data.mensagem || 'Não foi possível criar a postagem'));
+          alert('Erro: ' + (data.mensagem || 'Não foi possível atualizar o post'));
         }
       } catch (err) {
         alert('Erro ao comunicar com o servidor');
         console.error(err);
       }
     });
+  }
+  carregarPosts();
+</script>
 
-    // Função para carregar e mostrar posts
-    async function carregarPosts() {
-      try {
-        const res = await fetch('/posts');
-        const posts = await res.json();
-
-        listaPosts.innerHTML = '';
-
-        posts.forEach(post => {
-          const divPost = document.createElement('div');
-          divPost.className = 'post';
-
-          // Dados do post
-          const nomeAutor = post.autor?.nome || 'Anônimo';
-          const dataFormatada = new Date(post.data).toLocaleString();
-
-          // Conteúdo do post
-          let conteudoPost = document.createElement('p');
-          conteudoPost.textContent = post.conteudo;
-
-          // Container dos botões editar/excluir
-          const divAcoes = document.createElement('div');
-          divAcoes.className = 'acoes';
-
-          // Só libera editar/excluir se for o próprio autor
-          if (post.autor && post.autor._id === usuarioLogadoId) {
-            // Botão editar
-            const btnEditar = document.createElement('button');
-            btnEditar.title = 'Editar post';
-            btnEditar.innerHTML = '✏️';
-            btnEditar.addEventListener('click', () => iniciarEdicao(post, divPost));
-            divAcoes.appendChild(btnEditar);
-
-            // Botão excluir
-            const btnExcluir = document.createElement('button');
-            btnExcluir.title = 'Excluir post';
-            btnExcluir.innerHTML = '🗑️';
-            btnExcluir.addEventListener('click', () => excluirPost(post._id));
-            divAcoes.appendChild(btnExcluir);
-          }
-
-          // Monta o post
-          divPost.innerHTML = `
-            <strong>${nomeAutor}</strong><br>
-            <small>${dataFormatada}</small><br>
-          `;
-          divPost.appendChild(conteudoPost);
-          divPost.appendChild(divAcoes);
-
-          listaPosts.appendChild(divPost);
-        });
-      } catch (err) {
-        console.error('Erro ao carregar posts', err);
-      }
-    }
-
-    // Excluir post
-    async function excluirPost(postId) {
-      if (!confirm('Tem certeza que deseja excluir este post?')) return;
-
-      try {
-        const res = await fetch('/posts/' + postId, {
-          method: 'DELETE'
-        });
-        const data = await res.json();
-
-        if (res.ok) {
-          alert(data.mensagem || 'Post excluído com sucesso');
-          carregarPosts();
-        } else {
-          alert('Erro: ' + (data.mensagem || 'Não foi possível excluir o post'));
-        }
-      } catch (err) {
-        alert('Erro ao comunicar com o servidor');
-        console.error(err);
-      }
-    }
-
-    // Iniciar edição
-    function iniciarEdicao(post, divPost) {
-      divPost.innerHTML = `
-        <strong>${post.autor.nome}</strong><br>
-        <small>${new Date(post.data).toLocaleString()}</small><br>
-        <textarea class="editavel">${post.conteudo}</textarea><br>
-        <button id="salvarBtn">Salvar</button>
-        <button id="cancelarBtn">Cancelar</button>
-      `;
-
-      const textarea = divPost.querySelector('textarea');
-      const btnSalvar = divPost.querySelector('#salvarBtn');
-      const btnCancelar = divPost.querySelector('#cancelarBtn');
-
-      btnCancelar.addEventListener('click', carregarPosts);
-
-      btnSalvar.addEventListener('click', async () => {
-        const novoConteudo = textarea.value.trim();
-        if (!novoConteudo) {
-          alert('Conteúdo não pode ser vazio');
-          return;
-        }
-
-        try {
-          const res = await fetch('/posts/' + post._id, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ conteudo: novoConteudo })
-          });
-
-          const data = await res.json();
-
-          if (res.ok) {
-            alert(data.mensagem || 'Post atualizado com sucesso');
-            carregarPosts();
-          } else {
-            alert('Erro: ' + (data.mensagem || 'Não foi possível atualizar o post'));
-          }
-        } catch (err) {
-          alert('Erro ao comunicar com o servidor');
-          console.error(err);
-        }
-      });
-    }
-
-    // Carrega posts ao abrir a página
-    carregarPosts();
-  </script>
 </body>
 </html>
