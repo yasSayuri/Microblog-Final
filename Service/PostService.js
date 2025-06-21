@@ -13,7 +13,7 @@ class PostService {
       return post;
     } catch (err) {
       logErro(err);
-      throw err; // para o controlador (router) poder tratar também
+      throw err; 
     }
   }
 

@@ -5,7 +5,6 @@ const comentarioService = require('../services/ComentarioService');
 // Criar comentário
 router.post('/', async (req, res) => {
   try {
-    // Você pode obter o autorId do req.session.usuarioId para autenticação
     const autorId = req.session.usuarioId;
     if (!autorId) return res.status(401).json({ mensagem: 'Usuário não autenticado' });
 

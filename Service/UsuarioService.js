@@ -1,5 +1,5 @@
 const Usuario = require('../models/Usuario');
-const logErro = require('../log'); // importe a função de log que você criou
+const logErro = require('../log'); 
 const Comentario = require('../models/Comentario');
 class UsuarioService {
   async criarUsuario(dados) {

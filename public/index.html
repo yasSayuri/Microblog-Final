@@ -19,7 +19,7 @@
     const form = document.getElementById('formCadastro');
 
     form.addEventListener('submit', async (e) => {
-      e.preventDefault(); // evita envio padrão do form
+      e.preventDefault(); 
 
       const nome = form.nome.value;
       const email = form.email.value;
@@ -35,8 +35,8 @@
         const data = await res.json();
 
         if (res.ok) {
-          alert(data.msg); // mensagem de sucesso
-          window.location.href = '/login.html'; // redireciona para login
+          alert(data.msg); 
+          window.location.href = '/login.html'; 
         } else {
           alert('Erro: ' + (data.error || 'Algo deu errado'));
         }
