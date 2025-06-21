@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Feed - Microblog</title>
   <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     .post {
       border: 1px solid #ccc;
@@ -23,9 +24,9 @@
     }
 
     .post .acoes button {
-      background: yellow;
+      background: transparent;
       color: black;
-      border: none;
+      border: 1px solid black;
       cursor: pointer;
       margin-left: 5px;
       font-size: 16px;
@@ -34,6 +35,11 @@
     textarea.editavel {
       width: 100%;
       height: 80px;
+    }
+    
+    .material-icons {
+      font-size: 20px;
+      vertical-align: middle;
     }
   </style>
 </head>
@@ -113,16 +119,16 @@
         const divAcoes = document.createElement('div');
         divAcoes.className = 'acoes';
 
-        if (post.autor && post.autor._id === usuarioLogadoId) {
+        if (post.autorId?.toString() === usuarioLogadoId){
           const btnEditar = document.createElement('button');
           btnEditar.title = 'Editar post';
-          btnEditar.innerHTML = '✏️';
+          btnEditar.innerHTML = '<span class="material-icons">edit</span>';
           btnEditar.addEventListener('click', () => iniciarEdicao(post, divPost));
           divAcoes.appendChild(btnEditar);
 
           const btnExcluir = document.createElement('button');
           btnExcluir.title = 'Excluir post';
-          btnExcluir.innerHTML = '🗑️';
+          btnExcluir.innerHTML = '<span class="material-icons">delete</span>';
           btnExcluir.addEventListener('click', () => excluirPost(post._id));
           divAcoes.appendChild(btnExcluir);
         }
