@@ -1,54 +1,80 @@
 const Usuario = require('../models/Usuario');
+const logErro = require('../log'); // importe a função de log que você criou
 
 class UsuarioService {
   async criarUsuario(dados) {
-    const { nome, email, senha } = dados;
+    try {
+      const { nome, email, senha } = dados;
 
-    if (!nome || !email || !senha) {
-      throw new Error('Preencha todos os campos');
+      if (!nome || !email || !senha) {
+        throw new Error('Preencha todos os campos');
+      }
+
+      const existente = await Usuario.findOne({ email });
+      if (existente) {
+        throw new Error('Email já cadastrado');
+      }
+
+      const usuario = new Usuario({ nome, email });
+      await usuario.setSenha(senha);
+      await usuario.save();
+      return usuario;
+    } catch (err) {
+      logErro(err);
+      throw err;
     }
-
-    const existente = await Usuario.findOne({ email });
-    if (existente) {
-      throw new Error('Email já cadastrado');
-    }
-
-    const usuario = new Usuario({ nome, email });
-    await usuario.setSenha(senha);
-    await usuario.save();
-    return usuario;
   }
 
   async autenticar(email, senha) {
-    const usuario = await Usuario.findOne({ email });
-    if (!usuario) {
-      throw new Error('Email ou senha inválidos');
+    try {
+      const usuario = await Usuario.findOne({ email });
+      if (!usuario) {
+        throw new Error('Email ou senha inválidos');
+      }
+      const senhaValida = await usuario.validarSenha(senha);
+      if (!senhaValida) {
+        throw new Error('Email ou senha inválidos');
+      }
+      return usuario;
+    } catch (err) {
+      logErro(err);
+      throw err;
     }
-    const senhaValida = await usuario.validarSenha(senha);
-    if (!senhaValida) {
-      throw new Error('Email ou senha inválidos');
-    }
-    return usuario;
   }
 
   async atualizarUsuario(id, dados) {
-    const usuario = await Usuario.findById(id);
-    if (!usuario) throw new Error('Usuário não encontrado');
+    try {
+      const usuario = await Usuario.findById(id);
+      if (!usuario) throw new Error('Usuário não encontrado');
 
-    if (dados.nome) usuario.nome = dados.nome;
-    if (dados.email) usuario.email = dados.email;
-    if (dados.senha) await usuario.setSenha(dados.senha);
+      if (dados.nome) usuario.nome = dados.nome;
+      if (dados.email) usuario.email = dados.email;
+      if (dados.senha) await usuario.setSenha(dados.senha);
 
-    await usuario.save();
-    return usuario;
+      await usuario.save();
+      return usuario;
+    } catch (err) {
+      logErro(err);
+      throw err;
+    }
   }
 
   async listarUsuarios() {
-    return await Usuario.find();
+    try {
+      return await Usuario.find();
+    } catch (err) {
+      logErro(err);
+      throw err;
+    }
   }
 
   async deletarUsuario(id) {
-    return await Usuario.findByIdAndDelete(id);
+    try {
+      return await Usuario.findByIdAndDelete(id);
+    } catch (err) {
+      logErro(err);
+      throw err;
+    }
   }
 }
 

@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongodb';
 const express = require('express');
 const router = express.Router();
 const postService = require('../services/PostService');
@@ -42,6 +43,16 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+router.delete('/meus', async (req, res) => {
+  try {
+    if (!req.session.usuarioId) return res.status(401).json({ mensagem: 'Não autenticado' });
+    await db.collection('posts').deleteMany({ autorId: new ObjectId(req.session.usuarioId) });
+    res.json({ mensagem: 'Posts do usuário excluídos' });
+  } catch (err) {
+    res.status(500).json({ mensagem: 'Erro ao excluir posts' });
+  }
+});
+
 // Deletar post
 router.delete('/:id', async (req, res) => {
   try {
@@ -51,5 +62,6 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ mensagem: 'Erro ao excluir post' });
   }
 });
+
 
 module.exports = router;

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Feed - Microblog</title>
   <link rel="stylesheet" href="style.css" />
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <style>
     .post {
       border: 1px solid #ccc;
@@ -41,9 +41,56 @@
       font-size: 20px;
       vertical-align: middle;
     }
+
+    #topIcons {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 15px;
+      z-index: 1100;
+    }
+
+    #topIcons button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: black;
+      font-size: 32px;
+      padding: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    #topIcons button:hover {
+      color: #007bff;
+    }
   </style>
 </head>
+
 <body>
+  <!-- Ícones perfil e logout no canto superior direito -->
+  <div id="topIcons">
+    <button id="btnPerfil" title="Perfil">
+      <span class="material-icons">account_circle</span>
+    </button>
+    <button id="btnLogout" title="Logout">
+      <span class="material-icons">logout</span>
+    </button>
+  </div>
+
+  <!-- Modal Perfil -->
+  <div id="modalPerfil" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:#fff; padding:20px; border:1px solid #ccc; box-shadow:0 2px 10px rgba(0,0,0,0.3); z-index:1000; text-align:center;">
+    <h3>Perfil</h3>
+    <button id="btnExcluirConta" style="background:#f88; color:white; border:none; padding:8px 12px; margin:10px;">Excluir Conta</button>
+    <button id="btnListarUsuarios" style="padding:8px 12px;">Listar Usuários</button>
+    <div id="listaUsuarios" style="margin-top:15px; text-align:left;"></div>
+  </div>
+  <div id="fundoModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.3); z-index:999;"></div>
+
   <h1>Feed</h1>
 
   <section>
@@ -165,51 +212,110 @@
     }
   }
 
+  
   function iniciarEdicao(post, divPost) {
-    divPost.innerHTML = `
-      <strong>${post.autor.nome}</strong><br>
-      <small>${new Date(post.data).toLocaleString()}</small><br>
-      <textarea class="editavel">${post.conteudo}</textarea><br>
-      <button id="salvarBtn">Salvar</button>
-      <button id="cancelarBtn">Cancelar</button>
-    `;
+  divPost.innerHTML = `
+    <strong>${post.autorNome || 'Anônimo'}</strong><br>
+    <small>${new Date(post.data).toLocaleString()}</small><br>
+    <textarea class="editavel">${post.conteudo}</textarea><br>
+    <button id="salvarBtn">Salvar</button>
+    <button id="cancelarBtn">Cancelar</button>
+  `;
 
-    const textarea = divPost.querySelector('textarea');
-    const btnSalvar = divPost.querySelector('#salvarBtn');
-    const btnCancelar = divPost.querySelector('#cancelarBtn');
+  const textarea = divPost.querySelector('textarea');
+  const btnSalvar = divPost.querySelector('#salvarBtn');
+  const btnCancelar = divPost.querySelector('#cancelarBtn');
 
-    btnCancelar.addEventListener('click', carregarPosts);
+  btnCancelar.addEventListener('click', carregarPosts);
 
-    btnSalvar.addEventListener('click', async () => {
-      const novoConteudo = textarea.value.trim();
-      if (!novoConteudo) {
-        alert('Conteúdo não pode ser vazio');
-        return;
+  btnSalvar.addEventListener('click', async () => {
+    const novoConteudo = textarea.value.trim();
+    if (!novoConteudo) {
+      alert('Conteúdo não pode ser vazio');
+      return;
+    }
+
+    try {
+      const res = await fetch('/posts/' + post._id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conteudo: novoConteudo })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert(data.mensagem || 'Post atualizado com sucesso');
+        carregarPosts();
+      } else {
+        alert('Erro: ' + (data.mensagem || 'Não foi possível atualizar o post'));
       }
+    } catch (err) {
+      alert('Erro ao comunicar com o servidor');
+      console.error(err);
+    }
+  });
+}
 
-      try {
-        const res = await fetch('/posts/' + post._id, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ conteudo: novoConteudo })
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          alert(data.mensagem || 'Post atualizado com sucesso');
-          carregarPosts();
-        } else {
-          alert('Erro: ' + (data.mensagem || 'Não foi possível atualizar o post'));
-        }
-      } catch (err) {
-        alert('Erro ao comunicar com o servidor');
-        console.error(err);
-      }
-    });
-  }
   carregarPosts();
-</script>
+
+  // Modal e botões topo
+  const modal = document.getElementById('modalPerfil');
+  const fundoModal = document.getElementById('fundoModal');
+  const btnPerfil = document.getElementById('btnPerfil');
+  const btnLogout = document.getElementById('btnLogout');
+  const btnExcluirConta = document.getElementById('btnExcluirConta');
+  const btnListarUsuarios = document.getElementById('btnListarUsuarios');
+  const listaUsuarios = document.getElementById('listaUsuarios');
+
+  btnPerfil.addEventListener('click', () => {
+    modal.style.display = 'block';
+    fundoModal.style.display = 'block';
+  });
+
+  fundoModal.addEventListener('click', () => {
+    modal.style.display = 'none';
+    fundoModal.style.display = 'none';
+    listaUsuarios.innerHTML = '';
+  });
+
+  btnLogout.addEventListener('click', () => {
+    if (confirm('Deseja realmente sair?')) {
+    sessionStorage.clear();
+    window.location.href = '/index.html';
+  }
+  });
+
+  btnExcluirConta.addEventListener('click', async () => {
+    if (!confirm('Tem certeza que deseja excluir sua conta e todas as postagens?')) return;
+    const usuarioId = sessionStorage.getItem('usuarioId');
+    try {
+      // Exclui os posts do usuário
+      await fetch('/posts/meus', { method: 'DELETE' });
+
+      // Exclui a conta do usuário
+      await fetch('/usuarios/' + usuarioId, { method: 'DELETE' });
+
+      alert('Conta excluída com sucesso.');
+      sessionStorage.clear();
+      window.location.href = '/index.html';
+    } catch (err) {
+      alert('Erro ao excluir conta');
+      console.error(err);
+    }
+  });
+
+  btnListarUsuarios.addEventListener('click', async () => {
+    try {
+      const res = await fetch('/usuarios');
+      const usuarios = await res.json();
+      listaUsuarios.innerHTML = '<h4>Usuários:</h4>' + usuarios.map(u => `<div>• ${u.nome}</div>`).join('');
+    } catch (err) {
+      alert('Erro ao carregar usuários');
+      console.error(err);
+    }
+  });
+  </script>
 
 </body>
 </html>
