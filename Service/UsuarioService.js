@@ -1,6 +1,6 @@
 const Usuario = require('../models/Usuario');
 const logErro = require('../log'); // importe a função de log que você criou
-
+const Comentario = require('../models/Comentario');
 class UsuarioService {
   async criarUsuario(dados) {
     try {
@@ -71,6 +71,7 @@ class UsuarioService {
   async deletarUsuario(id) {
     try {
       return await Usuario.findByIdAndDelete(id);
+      await Comentario.deleteMany({ autorId: id });
     } catch (err) {
       logErro(err);
       throw err;
